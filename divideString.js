@@ -32,7 +32,7 @@ function divideString(string, options = {quoteChar:'\"',escapeChar:'\\',separato
                     }
                 } else {
                     if (nextChar == null) {
-                        throw new DivideStringError('Unfinished quote', charIndex+1);
+                        throw new DivideStringError('Unfinished quoted item', charIndex+1);
                     }
                     items[itemIndex] += char;
                 }
@@ -40,7 +40,7 @@ function divideString(string, options = {quoteChar:'\"',escapeChar:'\\',separato
                 items[itemIndex] += char;
                 if (!escaped) {
                     if (char === quoteChar) {
-                        throw new DivideStringError('Unescaped quoted item', charIndex)
+                        throw new DivideStringError('Unescaped quote', charIndex)
                     }
                 }
                 if (nextChar === separator) {
