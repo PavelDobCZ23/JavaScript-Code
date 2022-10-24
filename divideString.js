@@ -10,77 +10,56 @@
 function divideString(string, options = {quoteChar:'\"',escapeChar:'\\',separator:' '}) {
     const {quoteChar,escapeChar,separator} = options;
     const items = [];
-    let item = '';
-    let parsingItem = false;
-    let quoted = false;
-    let escaped = false;
+    let itemIndex = -1;
+    let parsingItem, escaped, quoted;
 
-    for (let index = 0;index < string.length;index++) {
-        const char = string[index];
+    for (let charIndex = -1;charIndex < string.length;charIndex++) {
+        const char = string[charIndex];
+        const nextChar = string[charIndex+1];
 
         if (!escaped && char === escapeChar) {
             escaped = true;
             continue;
         }
-
         if (parsingItem) {
-            if (escaped) { 
-                escaped = false;
-                item += char;
-                continue;
-            }
-
-            if (!quoted) {
-                if (char === separator) {
-                    parsingItem = false;
-                    items.push(item);
-                    item = '';
-                } else if (char === quoteChar) {
-                    throw new DivideStringError('Unescaped quote', index);
+            if (quoted) {
+                if (!escaped && char === quoteChar) {
+                    if (nextChar === separator || nextChar == null) {
+                        parsingItem = false;
+                        quoted = false;
+                    } else {
+                        throw new DivideStringError('Unescaped quote', charIndex);
+                    }
                 } else {
-                    item += char;
+                    if (nextChar == null) {
+                        throw new DivideStringError('Unfinished quote', charIndex+1);
+                    }
+                    items[itemIndex] += char;
                 }
             } else {
-                if (char === quoteChar) {
-                    if (string[index+1] && string[index+1] !== separator) {
-                        throw new DivideStringError('Unescaped quote', index);
+                items[itemIndex] += char;
+                if (!escaped) {
+                    if (char === quoteChar) {
+                        throw new DivideStringError('Unescaped quoted item', charIndex)
                     }
+                }
+                if (nextChar === separator) {
                     parsingItem = false;
-                    items.push(item);
-                    item = '';
-                } else {
-                    item += char;
-                } 
+                }
             }
         } else {
-            if (escaped) { 
-                escaped = false;
-                quoted = false;
+            if (nextChar !== separator && nextChar != null){
                 parsingItem = true;
-                item += char;
-                continue;
+                items.push('');
+                itemIndex++;
             }
-
-            if (char === separator) {
-                continue;
-            } else if (char === quoteChar) {
+            if (nextChar === quoteChar) {
                 quoted = true;
-                parsingItem = true;
-                continue;
-            } else {
-                quoted = false;
-                parsingItem = true;
-                item += char;
-                continue;
+                charIndex++;
             }
         }
-    }
-
-    if (parsingItem) {
-        if (!quoted) {
-            items.push(item);
-        } else {
-            throw new DivideStringError('Unfinished quoted item', string.length);
+        if (escaped) {
+            escaped = false;
         }
     }
 
